@@ -1,0 +1,58 @@
+services:
+  gateway-services:
+    build:
+      context: ./gateway-services  # Gateway servisi için build context
+      dockerfile: Dockerfile       # Dockerfile konumu
+    ports:
+      - "8081:8081"  # Gateway'in dışa açılacak portu
+    environment:
+      SPRING_CLOUD_GATEWAY_ROUTES_0_ID: urun-servicess # Gateway route id
+      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: http://e-ticaret-uygulamasi-urun-servicess-1:8087  # Urun service URL
+      SPRING_CLOUD_GATEWAY_ROUTES_1_ID: siparis-services  # Gateway route id
+      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: http://e-ticaret-uygulamasi-siparis-services-1:8082  # Siparis service URL
+    depends_on:
+      - urun-servicess
+      - siparis-services
+    networks:
+      - eticaret-network  # Aynı network'e bağlı
+    restart: always
+
+  urun-servicess:
+    image: urun-servicess-image  # Ürün servisi Docker image'ınız
+    container_name: urun-servicess
+    ports:
+      - "8087:8087"  # Urun servisi portu
+    networks:
+      - eticaret-network
+    restart: always
+
+  siparis-services:
+    image: siparis-services-image  # Sipariş servisi Docker image'ınız
+    container_name: siparis-services
+    ports:
+      - "8082:8082"  # Siparis servisi portu
+    networks:
+      - eticaret-network
+    restart: always
+
+  postgres:
+    image: postgres:13
+    container_name: container-postgresdb
+    restart: always
+    environment:
+      POSTGRES_USER: postgresdb
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: eticaret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eticaret-network
+
+volumes:
+  postgres_data:
+
+networks:
+  eticaret-network:
+    external: true  # Mevcut external network kullanılıyor

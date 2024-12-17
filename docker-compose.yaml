@@ -1,0 +1,79 @@
+services:
+  urun-servicess:
+    image: urun-servicess
+    build:
+      context: ./urun-servicess
+      dockerfile: Dockerfile
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://container-postgresdb:5432/eticaret
+      SPRING_DATASOURCE_USERNAME: postgresdb
+      SPRING_DATASOURCE_PASSWORD: admin
+    depends_on:
+      - postgres
+    networks:
+      - eticaret-network
+
+  siparis-services:
+    image: siparis-services
+    build:
+      context: ./siparis-services
+      dockerfile: Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://container-postgresdb:5432/eticaret
+      SPRING_DATASOURCE_USERNAME: postgresdb
+      SPRING_DATASOURCE_PASSWORD: admin
+    depends_on:
+      - postgres
+    networks:
+      - eticaret-network
+
+  gateway-services:
+    image: gateway-services
+    build:
+      context: ./gateway-services  # Gateway servisi için build context
+    ports:
+      - "8081:8081"  # Gateway'in dışa açılacak portu
+    networks:
+      - eticaret-network
+    depends_on:
+      - urun-servicess
+      - siparis-services
+
+
+  postgres:
+    image: postgres:13
+    container_name: container-postgresdb
+    restart: always
+    environment:
+      POSTGRES_USER: postgresdb
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: eticaret
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - eticaret-network
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: vigorous_tu
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: name@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - eticaret-network
+
+volumes:
+  postgres_data:
+
+networks:
+  eticaret-network:
+    external: true
